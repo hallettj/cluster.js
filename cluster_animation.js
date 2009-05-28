@@ -67,11 +67,18 @@ cluster.drawClusters = function(coord_func, clusters) {
     max_size = this.width / (reduce('x+y.length', 0, clusters) + 1);
     this.height = this.height || $(canvas).attr('height') - max_size;
 
+    // Initialize and clear the canvas.
     ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, this.width, this.height + max_size);
 
     map(function(cluster, index) {
       var key, color;
 
+      // Look up the color for this cluster. If no color has been defined yet,
+      // then generate one at random.
+      // 
+      // For purposes of looking up the correct color, the cluster is
+      // identified by its first element.
       key = JSON.stringify(cluster[0]);
       color = that.colors[key];
       if (typeof color === 'undefined') {
