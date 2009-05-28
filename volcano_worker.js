@@ -2,6 +2,14 @@
 
 importScripts('to-function.js', 'functional.js', 'cluster.js', 'volcanos.json');
 
+function pausecomp(millis) {
+  var date = new Date();
+  var curDate = null;
+
+  do { curDate = new Date(); }
+  while(curDate-date < millis);
+} 
+
 // Returns the distance between two objects in meters. Both objects must have
 // 'lat' and 'lng' properties.
 function geo_distance(a, b) {
@@ -20,7 +28,10 @@ var cluster_options = {
   },
   callback: function(clusters) {
     postMessage(clusters);
+    pausecomp(100);
   }
 };
 
 cluster(geo_distance, volcanos, cluster_options);
+
+postMessage([]); // Signals that clustering is finished.

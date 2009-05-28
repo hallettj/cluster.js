@@ -28,4 +28,6 @@ onmessage = function(e) {
   };
 
   cluster(dist, elements, cluster_options);
+
+  postMessage([]);  // Signals that clustering is complete.
 };

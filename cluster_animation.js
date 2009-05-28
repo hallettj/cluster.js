@@ -70,12 +70,13 @@ cluster.drawClusters = function(coord_func, clusters) {
     ctx = canvas.getContext('2d');
 
     map(function(cluster, index) {
-      var color;
+      var key, color;
 
-      color = that.colors[cluster[0]];
+      key = JSON.stringify(cluster[0]);
+      color = that.colors[key];
       if (typeof color === 'undefined') {
         color = that.random_color();
-        that.colors[cluster[0]] = color;
+        that.colors[key] = color;
       }
 
       ctx.fillStyle = color;

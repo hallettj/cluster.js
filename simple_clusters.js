@@ -13,7 +13,11 @@
  $(document).ready(function() {
    var worker = new Worker('simple_worker.js');
    worker.onmessage = function(evnt) {
-     cluster.drawClusters(coord_func, evnt.data);
+     if (evnt.data.length && evnt.data.length > 0) {
+       cluster.drawClusters(coord_func, evnt.data);
+     } else {
+       $('#spinner').hide();
+     }
    };
    worker.onerror = function(evnt) {
      console.log(evnt);
