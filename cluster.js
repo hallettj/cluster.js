@@ -68,10 +68,14 @@ if (typeof Array.sum === 'undefined') {
 function cluster(distance, elements, options) {
   var halting_condition, linkage_criteria, callback;
 
+  distance = distance.toFunction();
+
   options = options || {};
-  linkage_criteria = options.linkage_criteria || cluster.average_linkage(distance);
-  halting_condition = options.halting_condition;  // TODO: Default halting condition?
-  callback = options.callback;
+  linkage_criteria = (options.linkage_criteria || cluster.average_linkage(distance)).toFunction();
+  halting_condition = options.halting_condition.toFunction();  // TODO: Default halting condition?
+  if (options.callback) {
+    callback = options.callback.toFunction();
+  }
 
   function merge_clusters(clusters) {
     var x, y, dist, nearest_dist, A, B, AB, merged;
@@ -156,7 +160,7 @@ cluster.complete_linkage = function(d) {
       }
     }
     return max;
-  }
+  };
 };
 
 cluster.single_linkage = function(d) {
@@ -172,7 +176,7 @@ cluster.single_linkage = function(d) {
       }
     }
     return min;
-  }
+  };
 };
 
 // Given a distance function, returns a function that computes the distance
