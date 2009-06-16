@@ -1,6 +1,6 @@
 /*globals cluster onmessage postMessage importScripts */
 
-importScripts('to-function.js', 'functional.js', 'cluster.js');
+importScripts('functional.min.js', 'cluster.js');
 
 function pausecomp(millis) {
   var date = new Date();

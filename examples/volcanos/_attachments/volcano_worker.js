@@ -1,6 +1,6 @@
 /*globals volcanos cluster postMessage importScripts */
 
-importScripts('to-function.js', 'functional.js', 'cluster.js', 'volcanos.json');
+importScripts('functional.min.js', 'cluster.js', 'volcanos.json');
 
 function pausecomp(millis) {
   var date = new Date();
