@@ -2,45 +2,40 @@
 //
 // Cluster analysis software implemented with JavaScript.
 
-/*globals load Functional _ map reduce select compose zip K */
-
-if (typeof load !== 'undefined') {
-  load('to-function.js');
-  load('functional.js');
-}
+/*globals cluster load Functional _ map reduce select compose zip K */
 
 Functional.install();
 
 if (typeof Array.max === 'undefined') {
 
-  // === {{{Array.max()}}} ===
-  //
-  // Returns the largest value in an array.
+    // === {{{Array.max()}}} ===
+    //
+    // Returns the largest value in an array.
 
-  Array.max = function(array) {
-    return Math.max.apply(Math, array);
-  };
+    Array.max = function(array) {
+        return Math.max.apply(Math, array);
+    };
 
 }
 if (typeof Array.min === 'undefined') {
 
-  // === {{{Array.min()}}} ===
-  //
-  // Returns the smallest value in an arry.
+    // === {{{Array.min()}}} ===
+    //
+    // Returns the smallest value in an arry.
 
-  Array.min = function(array) {
-    return Math.min.apply(Math, array);
-  };
+    Array.min = function(array) {
+        return Math.min.apply(Math, array);
+    };
 }
 if (typeof Array.sum === 'undefined') {
 
-  // === {{{Array.sum()}}} ===
-  //
-  // Returns the sum of all values in an array.
+    // === {{{Array.sum()}}} ===
+    //
+    // Returns the sum of all values in an array.
 
-  Array.sum = function(array) {
-    return reduce('x+y', 0, array);
-  };
+    Array.sum = function(array) {
+        return reduce('x+y', 0, array);
+    };
 }
 
 // === {{{cluster()}}} ===
@@ -65,63 +60,70 @@ if (typeof Array.sum === 'undefined') {
 // used to draw a graphic representation of the clustering process at each
 // step.
 
-function cluster(distance, elements, options) {
-  var halting_condition, linkage_criteria, callback;
+cluster = function(distance, elements, options) {
+    var halting_condition, linkage_criteria, callback;
 
-  distance = distance.toFunction();
+    distance = distance.toFunction();
 
-  options = options || {};
-  linkage_criteria = (options.linkage_criteria || cluster.average_linkage(distance)).toFunction();
-  halting_condition = options.halting_condition.toFunction();  // TODO: Default halting condition?
-  if (options.callback) {
-    callback = options.callback.toFunction();
-  }
-
-  function merge_clusters(clusters) {
-    var x, y, dist, nearest_dist, A, B, AB, merged;
-
-    if (typeof callback === 'function') {
-      callback(clusters);
+    options = options || {};
+    linkage_criteria = (options.linkage_criteria || cluster.average_linkage(distance)).toFunction();
+    halting_condition = options.halting_condition.toFunction();  // TODO: Default halting condition?
+    if (options.callback) {
+        callback = options.callback.toFunction();
     }
 
-    // Find the two nearest clusters.
-    nearest_dist = Infinity;
-    for (x = 0; x < clusters.length; x += 1) {
-      for (y = 0; y < clusters.length; y += 1) {
-        if (x !== y) {
-          dist = linkage_criteria(clusters[x], clusters[y]);
-          if (dist < nearest_dist) {
-            A = clusters[x];
-            B = clusters[y];
-            nearest_dist = dist;
-          }
+    function merge_clusters(clusters) {
+        var x, y, dist, nearest_dist, A, B, AB, merged;
+
+        if (typeof callback === 'function') {
+            callback(clusters);
         }
-      }
+
+        // Find the two nearest clusters.
+        nearest_dist = Infinity;
+        for (x = 0; x < clusters.length; x += 1) {
+            for (y = 0; y < clusters.length; y += 1) {
+                if (x !== y) {
+                    dist = linkage_criteria(clusters[x], clusters[y]);
+                    if (dist < nearest_dist) {
+                        A = clusters[x];
+                        B = clusters[y];
+                        nearest_dist = dist;
+                    }
+                }
+            }
+        }
+
+        if (!halting_condition(clusters, nearest_dist)) {
+            // Since clusters are just arrays, we can merge them by simple
+            // concatenation.
+            AB = A.concat(B);
+
+            // Make the recursive call after substituting the clusters A and B with
+            // the new merged AB cluster.
+            merged = select(function(X) { return X !== A && X !== B; }, clusters);
+            merged.push(AB);
+
+            return merge_clusters(merged);
+
+        } else {
+            // Base case: if no two clusters were found within the given distance
+            // threshold, then return the list of clusters as it was given.
+            return clusters;
+        }
     }
 
-    if (!halting_condition(clusters, nearest_dist)) {
-      // Since clusters are just arrays, we can merge them by simple
-      // concatenation.
-      AB = A.concat(B);
+    // Convert each element into a cluster of one element by putting it in an
+    // array. Then call the merge_clusters function.
+    return merge_clusters(map('e -> [e]', elements));
+};
 
-      // Make the recursive call after substituting the clusters A and B with
-      // the new merged AB cluster.
-      merged = select(function(X) { return X !== A && X !== B; }, clusters);
-      merged.push(AB);
-
-      return merge_clusters(merged);
-
-    } else {
-      // Base case: if no two clusters were found within the given distance
-      // threshold, then return the list of clusters as it was given.
-      return clusters;
-    }
-  }
-
-  // Convert each element into a cluster of one element by putting it in an
-  // array. Then call the merge_clusters function.
-  return merge_clusters(map('e -> [e]', elements));
+// Setup CouchDB connection. The default URL is 'http://localhost:5984'. Set
+// the cluster.couchdb_url property to use a URL other than the default.
+if (typeof cluster.couchdb_url !== "undefined") {
+    cluster.couchdb_url = "http://localhost:5984/";
 }
+
 
 /* *** Distance Functions *** */
 
