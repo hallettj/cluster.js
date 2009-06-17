@@ -11,7 +11,7 @@ function difference_in_taste(a, b) {
     var movie, d = 0;
     for (movie in a.ratings) {
         if (a.ratings.hasOwnProperty(movie)) {
-            if (typeof b.ratings[movie] !== 'undefined') {
+            if (b.ratings[movie]) {
                 d += Math.pow(a.ratings[movie] - b.ratings[movie], 2);
             }
         }
@@ -32,45 +32,35 @@ var cluster_options = {
 var rating_clusters = cluster(difference_in_taste, movie_ratings, cluster_options);
 
 // Upload the results to CouchDB with centroids and bounding boxes.
-map(function(c) {
+postMessage("Uploading clusters to CouchDB.")
+map(function(cluster) {
     var centroid = { ratings: {} },
-        movies, movie;
+        movies, movie, i;
 
     // Get a list of all movie names with the number of times that each movie
     // is rated.
-    movies = reduce(function(m, e) {
-        for (movie in e.ratings) {
-            if (e.hasOwnProperty(movie)) {
-                m[movie] = m[movie] || 0;
-                m[movie] += 1;
+    movies = {}
+    for (i = 0; i < cluster.length; i += 1) {
+        for (movie in cluster[i].ratings) {
+            if (cluster[i].ratings.hasOwnProperty(movie)) {
+                movies[movie] = (movies[movie] || 0) + 1;
             }
-        }
-        return m;
-    }, {}, c);
-
-    // Add up all of the ratings for each movie in the centroid.
-    reduce(function(c,e) {
-        for (movie in e.ratings) {
-            if (e.hasOwnProperty(movie)) {
-                c.ratings[movie] = c.ratings[movie] || 0;
-                c.ratings[movie] += e.ratings[movie];
-            }
-        }
-        return c;
-    }, centroid, c);
-
-    // Divide the ratings total for each movie in the centroid by the number of
-    // times that movie was rated to get average ratings for each movie.
-    for (movie in centroid.ratings) {
-        if (centroid.hasOwnProperty(movie)) {
-            centroid.ratings[movie] = centroid.ratings[movie] / movies[movie];
         }
     }
 
+    // Add up all of the ratings for each movie in the centroid.
+    for (i = 0; i < cluster.length; i += 1) {
+        for (movie in cluster[i].ratings) {
+            if (cluster[i].ratings.hasOwnProperty(movie)) {
+                centroid.ratings[movie] = centroid.ratings[movie] || 0;
+                centroid.ratings[movie] += cluster[i].ratings[movie] / movies[movie];
+            }
+        }
+    }
 
     app_db.save({
         type: 'cluster',
-        elements: c,
+        elements: cluster,
         centroid: centroid
     });
 }, rating_clusters);

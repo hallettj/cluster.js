@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 #
-# Populates a CouchDB database with 100k movie ratings.
+# Populates a CouchDB database with movie ratings.
 
 require 'fastercsv'
 require 'couchrest'
@@ -52,22 +52,21 @@ db.save_doc({
 
 ## Import movie rating records.
 
+count = 0
 FasterCSV.foreach(File.join(File.dirname(__FILE__), "ml-data/u.data"), :col_sep => "\t") do |row|
-  if MOVIES[row[1].to_i]
+  if MOVIES[row[1].to_i] and count < 100
     user = db.view('ratings/users', :key => row[0].to_i)["rows"].first
     if user
-      db.save_doc({
-        :id      => user["id"],
-        :type    => user["value"]["type"],
-        :user_id => user["value"]["user_id"],
-        :ratings => user["value"]["ratings"].merge(MOVIES[row[1].to_i] => row[2].to_i)
-      })
+      user = user['value']
+      user['ratings'] = user['ratings'].merge(MOVIES[row[1].to_i] => row[2].to_i)
+      db.save_doc(user)
     else
       db.save_doc({
         :type    => 'ratings',
         :user_id => row[0].to_i,
         :ratings => { MOVIES[row[1].to_i] => row[2].to_i }
       })
+      count += 1
     end
   end
 end
